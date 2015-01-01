@@ -17,7 +17,7 @@ function [P,J]=OpenActiveContour(I,P,Options)
 %  Options.Gamma : Time step, default 1
 %  Options.Iterations : Number of iterations, default 100
 %
-% options (Image Edge Energy / Image force))
+% options (Image Edge Energy / Image force)
 %  Options.Sigma1 : Sigma used to calculate image derivatives, default 10
 %  Options.Wline : Attraction to lines, if negative to black lines otherwise white
 %                    lines , default 0.04
@@ -34,10 +34,12 @@ function [P,J]=OpenActiveContour(I,P,Options)
 %  Options.GIterations : Number of GVF iterations, default 0
 %  Options.Sigma3 : Sigma used to calculate the laplacian in GVF, default 1.0
 %
-% options (Snake)
+% options (internal force)
 %  Options.Alpha : Membrame energy  (first order), default 0.2
-%  Options.Beta : Thin plate energy (second order), default 0.2
-%  Options.Delta : Baloon force, default 0.1
+%  Options.Beta : Thin plate energy (second order), default 0.0
+
+% options (Snake)
+%  Options.Delta : stretching force due to length prior
 %  Options.Kappa : Weight of external image force, default 2
 %
 % Example, Basic:
@@ -86,10 +88,13 @@ function [P,J]=OpenActiveContour(I,P,Options)
 %   [O,J]=Snake2D(I,P,Options);
 %   
 % Function is written by D.Kroon University of Twente (July 2010)
-% Modified by Jianxu Chen (Jan 2015)
+% Modified by Jianxu Chen (University of Notre Dame) at Jan 2015
 
 % Process inputs
-defaultoptions=struct('Verbose',false,'nPoints',25,'Wline',0.04,'Wedge',2,'Wterm',0.01,'Sigma1',10,'Sigma2',20,'Alpha',0.2,'Beta',0.2,'Delta',0.1,'Gamma',1,'Kappa',2,'Iterations',100,'GIterations',0,'Mu',0.2,'Sigma3',1);
+defaultoptions=struct('Verbose',false,'nPoints',25,'Wline',0.04,'Wedge',2,...
+    'Wterm',0.01,'Sigma1',10,'Sigma2',20,'Alpha',0.2,'Beta',0.0,'Delta',0.1,...
+    'Gamma',1,'Kappa',2,'Iterations',100,'GIterations',0,'Mu',0.2,'Sigma3',1);
+
 if(~exist('Options','var')), 
     Options=defaultoptions; 
 else
@@ -124,36 +129,37 @@ Fext(:,:,2)=-Fy*2*Options.Sigma2^2;
 Fext=GVFOptimizeImageForces2D(Fext, Options.Mu, Options.GIterations, Options.Sigma3);
 
 % % Show the image, contour and force field
-if(Options.Verbose)
-    h=figure; set(h,'render','opengl')
-     subplot(2,2,1),
-      imshow(I,[]); 
-      hold on; plot(P(:,2),P(:,1),'b.'); hold on;
-      title('The image with initial contour')
-     subplot(2,2,2),
-      imshow(Eext,[]); 
-      title('The external energy');
-     subplot(2,2,3), 
-      [x,y]=ndgrid(1:10:size(Fext,1),1:10:size(Fext,2));
-      imshow(I), hold on; quiver(y,x,Fext(1:10:end,1:10:end,2),Fext(1:10:end,1:10:end,1));
-      title('The external force field ')
-     subplot(2,2,4), 
-      imshow(I), hold on; plot(P(:,2),P(:,1),'b.'); 
-      title('Snake movement ')
-    drawnow
-end
-
 % if(Options.Verbose)
-%     imshow(I), hold on; plot(P(:,2),P(:,1),'b.');
+%     h=figure; set(h,'render','opengl')
+%      subplot(2,2,1),
+%       imshow(I,[]); 
+%       hold on; plot(P(:,2),P(:,1),'b.'); hold on;
+%       title('The image with initial contour')
+%      subplot(2,2,2),
+%       imshow(Eext,[]); 
+%       title('The external energy');
+%      subplot(2,2,3), 
+%       [x,y]=ndgrid(1:10:size(Fext,1),1:10:size(Fext,2));
+%       imshow(I), hold on; quiver(y,x,Fext(1:10:end,1:10:end,2),Fext(1:10:end,1:10:end,1));
+%       title('The external force field ')
+%      subplot(2,2,4), 
+%       imshow(I), hold on; plot(P(:,2),P(:,1),'b.'); 
+%       title('Snake movement ')
+%     drawnow
 % end
+
+if(Options.Verbose)
+    imshow(I), hold on; plot(P(:,2),P(:,1),'b.');
+end
 
 % Make the interal force matrix, which constrains the moving points to a
 % smooth contour
 S=SnakeInternalForceMatrix2D(Options.nPoints,Options.Alpha,Options.Beta,Options.Gamma);
 h=[];
+thickness=4;
 
 for i=1:Options.Iterations
-    P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta);
+    P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta,thickness);
 
     % Show current contour
     if(Options.Verbose)
@@ -164,7 +170,7 @@ for i=1:Options.Iterations
     end
 end
 
-if(nargout>1)
-     J=DrawSegmentedArea2D(P,size(I));
-end
+%if(nargout>1)
+%     J=DrawSegmentedArea2D(P,size(I));
+%end
 
