@@ -157,9 +157,10 @@ end
 S=SnakeInternalForceMatrix2D(Options.nPoints,Options.Alpha,Options.Beta,Options.Gamma);
 h=[];
 thickness=4;
+targetLength=100;
 
 for i=1:Options.Iterations
-    P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta,thickness);
+    P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta,thickness,targetLength);
 
     % Show current contour
     if(Options.Verbose)
