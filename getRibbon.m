@@ -1,8 +1,9 @@
-function [R1,R2]=getRibbon(P,thickness,xdim,ydim)
+function [R1,R2,N]=getRibbon(P,thickness,xdim,ydim)
 
 N=GetContourNormals2D(P); %%% unit normal vectors
-R1=N.*thickness;
-R2=N.*(-thickness);
+dt=N.*thickness;
+R1=P+dt;
+R2=P-dt;
 
 R1(:,1)=min(max(R1(:,1),1), xdim);
 R1(:,2)=min(max(R1(:,2),1), ydim);
