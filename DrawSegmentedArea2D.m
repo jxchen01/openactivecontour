@@ -25,4 +25,11 @@ for i=1:1:numel(Ps)
     tmp(round(P(end,1)),round(P(end,2)))=true;
     J = J | imdilate(tmp,se);
 end
-imshow(J)
+
+figure(2);
+imagesc(I,[0, 255]); axis off; axis equal; colormap(gray); 
+hold on; contour(J,[1 1],'r','Linewidth',1); hold off;
+drawnow
+
+
+
