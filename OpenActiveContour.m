@@ -23,14 +23,14 @@ function [P,J]=OpenActiveContour(I,P,Options)
 
 % options (Snake)
 %  Options.Delta : stretching force due to length prior
-%  Options.Kappa : Weight of repelling force, default 0.1
+%  Options.Kappa : Weight of repelling force, default 0.2
 
 % Function is written by D.Kroon University of Twente (July 2010)
 % Modified by Jianxu Chen (University of Notre Dame) at Jan 2015
 
 % Process inputs
-defaultoptions=struct('Verbose',false,'nPoints',25,'Sigma1',10,'Sigma2',20,'Alpha',0.2,'Beta',0.0,'Delta',0.5,...
-    'Gamma',1,'Kappa',0.1,'Iterations',100,'GIterations',0,'Mu',0.2,'Sigma3',1);
+defaultoptions=struct('Verbose',false,'nPoints',25,'Alpha',0.2,'Beta',0.0,'Delta',2,...
+    'Gamma',1,'Kappa',0.2,'Iterations',100);
 
 if(~exist('Options','var')), 
     Options=defaultoptions; 
@@ -61,7 +61,7 @@ end
 % Make the interal force matrix (smooth the contour)
 S=SnakeInternalForceMatrix2D(Options.nPoints,Options.Alpha,Options.Beta,Options.Gamma);
 
-for i=1:Options.Iterations
+for i=1:Options.Iterations    
     %P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta,thickness,targetLength);
     P=SnakeRegionUpdate(I,S,P,zeros(size(I)),Options.Gamma,Options.Kappa,Options.Delta);
     
@@ -69,10 +69,25 @@ for i=1:Options.Iterations
     if(Options.Verbose)
         myHandle=drawContours(P,i/Options.Iterations,myHandle);
     end
+    
+    if(stopCheck(P))
+        break;
+    end
 end
 
 if(nargout>1)
      J=DrawSegmentedArea2D(P,I);
 end
 
+end
+
+function flag=stopCheck(P)
+    flag=true;
+    for i=1:1:numel(P)
+        if(abs(P{i}.length - P{i}.targetLength)> 0.05*P{i}.targetLength)
+            flag=false;
+            break;
+        end
+    end
+end
 
