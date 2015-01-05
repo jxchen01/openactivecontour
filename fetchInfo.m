@@ -1,7 +1,7 @@
 function [RepelForce, ContourImage]=fetchInfo(Ps,BMap)
 
 %%% key parameter %%%
-repelThresh=5;
+repelThresh=10;
 %%%%%%%%%%%%%%%%%%%%%
 
 [xdim,ydim]=size(BMap);
@@ -18,7 +18,7 @@ for ci=1:1:numContour
     repelMap = bwdist(Ps{ci}.region);
     repelMap(repelMap>repelThresh)=0;
     idx=find(repelMap>0);
-    repelMap(idx)=1./(1+exp(3.*(repelMap(idx)-3)));
+    repelMap(idx)=1./(1+exp(2.*(repelMap(idx)-4)));
     repelMap(Ps{ci}.region)=100;
     RepelForce(:,:,ci)=repelMap(:,:);
 end

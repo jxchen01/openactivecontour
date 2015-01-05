@@ -55,7 +55,7 @@ end
 P=InterpolateContourPoints2D(P,Options.nPoints,size(I));
 P=cellInfoUpdate(P,I);
 if(Options.Verbose)
-    figure(2), imshow(I), hold on; myHandle=drawContours(P,0,[]);
+    figure(2), imshow(I), hold on; myHandle=drawContours(P,0,[],0);
 end
 
 % Make the interal force matrix (smooth the contour)
@@ -67,7 +67,7 @@ for i=1:Options.Iterations
     
     % Show current contour
     if(Options.Verbose)
-        myHandle=drawContours(P,i/Options.Iterations,myHandle);
+        myHandle=drawContours(P,i/Options.Iterations,myHandle,i);
     end
     
     if(stopCheck(P))

@@ -35,7 +35,7 @@ dphi=zeros(nPoints,2);
 rp=zeros(nPoints,2);
 Fext=zeros(nPoints,2);
 for ci=1:1:numContour
-    if(ci==5)
+    if(ci==4) % 5
         keyboard;
     end
     % retrieve info of current cell
@@ -46,39 +46,27 @@ for ci=1:1:numContour
     NV=Ps{ci}.normvec;
     len=Ps{ci}.length;
     targetLength = Ps{ci}.targetLength;
+    
+    %%%%% prepare global image force %%%%%%%
+    dphi_all = (I-interiorIntensity).^2-(I-exteriorIntensity).^2;
+    %%%%% prepare global repelling force %%%%%%%
+    id=setdiff(1:1:numContour+1,ci);
+    rp_all=sum(RepelForce(:,:,id),3);
         
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % forces exerted in normal direction of cell body
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % image force based on Chan-Vese model
-    dphi_all = (I-interiorIntensity).^2-(I-exteriorIntensity).^2;
     dphi(:,1) = interp2(dphi_all,R1(:,2),R1(:,1));
     dphi(:,2) = interp2(dphi_all,R2(:,2),R1(:,1));    
     dphi(isnan(dphi))=0;
     
-    F_CV_Norm = -(dphi(:,1)-dphi(:,2))./max(abs(dphi(:)));
-    
-    % repeling force
-    id=setdiff(1:1:numContour+1,ci);
-    rp_all=sum(RepelForce(:,:,id),3);
+    % repelling force
     rp(:,1) = interp2(rp_all,R1(:,2),R1(:,1));
     rp(:,2) = interp2(rp_all,R2(:,2),R1(:,1)); 
     rp(isnan(rp))=0;
     
     F_repel_Norm = -(rp(:,1)-rp(:,2));
-    
-    % Combing repeling force and image force into External Force Vector
-    FN=F_CV_Norm+kappa.*F_repel_Norm;
-       
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % upper bounded by +/- 1
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%   
-    FN(FN>1)=1;
-    FN(FN<-1)=-1;
-    
-    % make into vectors
-    Fext(:,1)=NV(:,1).*FN;
-    Fext(:,2)=NV(:,2).*FN;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % forces exerted in tangential direction of head/tail
@@ -102,13 +90,6 @@ for ci=1:1:numContour
     % image force based on chan-vese model
     cv_head = interp2(dphi_all,pp(:,2),pp(:,1));
     cv_head(isnan(cv_head))=0;
-    cv_head=cv_head./(1e-8+max(abs(cv_head)));
-    
-    % combine repelling force and image force
-    ff=-(kappa.*rp_head+cv_head);
-    
-    ff(ff>1)=1; 
-    ff(ff<-1)=-1;
     
     % the stretching force
     if(len<0.85*targetLength)
@@ -119,21 +100,61 @@ for ci=1:1:numContour
         phi=-1;
     else % expected length [0.95L, 1.05L]
         phi=0;
-    end   
-    if(ff(1)<0 && ff(2)<0)
-        sf=2*delta*phi.*nn;
-    else
-        sf=delta*phi.*nn;
-    end
+    end       
+    sf=delta*phi;
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % normalize the image force along the contour
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    cvMax=max([abs(dphi(:));abs(cv_head(:))]);
+     
+    %%%% normal direction %%%%
+    
+    % calculate the normalized image force in normal direction
+    F_CV_Norm = -(dphi(:,1)-dphi(:,2))./cvMax;
+    
+    % Combing repeling force and image force into External Force Vector
+    FN=F_CV_Norm+kappa.*F_repel_Norm;
+
+    % upper bounded by +/- 1
+    FN(FN>1)=1;
+    FN(FN<-1)=-1;
+    
+    % make into vectors
+    Fext(:,1)=NV(:,1).*FN;
+    Fext(:,2)=NV(:,2).*FN;
+
+    %%%%%% tangential direction  %%%%%%%
+    
+    % calculate the normalized image force in tangential direction
+    cv_head=cv_head./cvMax;
+    
+    % combine repelling force and image force
+    ff=-(kappa.*rp_head+cv_head);
+    
+    % upper bounded by +/- 1
+    ff(ff>1)=1; 
+    ff(ff<-1)=-1;
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Update contour positions
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     ss = gamma.*P + Fext ;
     ss(1,:) = ss(1,:) + ff(1).*nn(1,:);
     ss(end,:) = ss(end,:) + ff(2).*nn(2,:);
+    
     if(ff(1)>ff(2)) % larger means easiler to grow
-        ss(1,:) = ss(1,:)+sf(1,:); 
+        if(ff(1)<0)
+            ss(1,:) = ss(1,:)+(2*sf).*nn(1,:);
+        else
+            ss(1,:) = ss(1,:)+sf.*nn(1,:);
+        end
     else
-        ss(end,:) = ss(end,:)+sf(2,:); 
+        if(ff(2)<0)
+            ss(end,:) = ss(end,:)+(2*sf).*nn(2,:);
+        else
+            ss(end,:) = ss(end,:)+sf.*nn(2,:);
+        end
     end
     P = B * ss;
     %P(:,2) = B * ssy;
@@ -142,7 +163,16 @@ for ci=1:1:numContour
     P(:,1)=min(max(P(:,1),1),xdim);
     P(:,2)=min(max(P(:,2),1),ydim);
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % regulation on head/tail
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    flag=HighCurvature(P); % 1-by-2 logical array
+    if(any(flag))
+        P=headRegulation(P,I,flag,[xdim,ydim]);
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Ps{ci}.pts = P;
 end
   
 P = cellInfoUpdate(Ps,I);
+
