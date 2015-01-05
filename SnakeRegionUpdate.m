@@ -1,4 +1,4 @@
-function P=SnakeRegionUpdate(I,B,Ps,BMap,gamma,kappa,delta)
+function Ps=SnakeRegionUpdate(I,B,Ps,BMap,gamma,kappa,delta)
 % This function will calculate one iteration of ribbon Snake movement
 %
 % P=SnakeRegionUpdate(I,B,P,BMap,gamma,kappa)
@@ -35,9 +35,9 @@ dphi=zeros(nPoints,2);
 rp=zeros(nPoints,2);
 Fext=zeros(nPoints,2);
 for ci=1:1:numContour
-    if(ci==4) % 5
-        keyboard;
-    end
+%     if(ci==5) % 4
+%         keyboard;
+%     end
     % retrieve info of current cell
     interiorIntensity = Ps{ci}.intensity;
     P =Ps{ci}.pts;
@@ -58,7 +58,7 @@ for ci=1:1:numContour
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % image force based on Chan-Vese model
     dphi(:,1) = interp2(dphi_all,R1(:,2),R1(:,1));
-    dphi(:,2) = interp2(dphi_all,R2(:,2),R1(:,1));    
+    dphi(:,2) = interp2(dphi_all,R2(:,2),R2(:,1));    
     dphi(isnan(dphi))=0;
     
     % repelling force
@@ -121,7 +121,7 @@ for ci=1:1:numContour
     FN(FN<-1)=-1;
     
     % make into vectors
-    Fext(:,1)=NV(:,1).*FN;
+    Fext(:,1)=NV(:,1).*FN ;
     Fext(:,2)=NV(:,2).*FN;
 
     %%%%%% tangential direction  %%%%%%%
@@ -140,22 +140,28 @@ for ci=1:1:numContour
     % Update contour positions
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     ss = gamma.*P + Fext ;
-    ss(1,:) = ss(1,:) + ff(1).*nn(1,:);
-    ss(end,:) = ss(end,:) + ff(2).*nn(2,:);
+    ds = zeros(2,2);
+    %ss(1,:) = ss(1,:) + ff(1).*nn(1,:);
+    %ss(end,:) = ss(end,:) + ff(2).*nn(2,:);
     
     if(ff(1)>ff(2)) % larger means easiler to grow
         if(ff(1)<0)
-            ss(1,:) = ss(1,:)+(2*sf).*nn(1,:);
+            ds(1,:) = (ff(1)+2*sf).*nn(1,:);
         else
-            ss(1,:) = ss(1,:)+sf.*nn(1,:);
+            ds(1,:) = (ff(1)+sf).*nn(1,:);
         end
+        ds(2,:) = ff(2).*nn(2,:);
     else
         if(ff(2)<0)
-            ss(end,:) = ss(end,:)+(2*sf).*nn(2,:);
+            ds(2,:) = (ff(2)+2*sf).*nn(2,:);
         else
-            ss(end,:) = ss(end,:)+sf.*nn(2,:);
+            ds(2,:) = (ff(2)+sf).*nn(2,:);
         end
+        ds(1,:) = ff(1).*nn(1,:);
     end
+    
+    ss([1,end],:) = ss([1,end],:) + ds;
+
     P = B * ss;
     %P(:,2) = B * ssy;
     
@@ -173,6 +179,3 @@ for ci=1:1:numContour
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     Ps{ci}.pts = P;
 end
-  
-P = cellInfoUpdate(Ps,I);
-

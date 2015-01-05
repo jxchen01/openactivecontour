@@ -61,9 +61,23 @@ end
 % Make the interal force matrix (smooth the contour)
 S=SnakeInternalForceMatrix2D(Options.nPoints,Options.Alpha,Options.Beta,Options.Gamma);
 
+% % Transform the Image into an External Energy Image
+% Eext = ExternalForceImage2D(I,0.04, 2, 0.01 ,6);
+% 
+% % Make the external force (flow) field.
+% Fx=ImageDerivatives2D(Eext,20,'x');
+% Fy=ImageDerivatives2D(Eext,20,'y');
+% Fext(:,:,1)=-Fx*2*20^2;
+% Fext(:,:,2)=-Fy*2*20^2;
+
 for i=1:Options.Iterations    
     %P=SnakeMoveIteration2D(S,P,Fext,Options.Gamma,Options.Kappa,Options.Delta,thickness,targetLength);
     P=SnakeRegionUpdate(I,S,P,zeros(size(I)),Options.Gamma,Options.Kappa,Options.Delta);
+    
+    if(mod(i,5)==0)
+        P=InterpolateContourPoints2D(P,Options.nPoints,size(I));
+    end
+    P = cellInfoUpdate(P,I);
     
     % Show current contour
     if(Options.Verbose)
