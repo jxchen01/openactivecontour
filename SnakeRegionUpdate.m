@@ -35,9 +35,9 @@ dphi=zeros(nPoints,2);
 rp=zeros(nPoints,2);
 Fext=zeros(nPoints,2);
 for ci=1:1:numContour
-%     if(ci==5) % 4
-%         keyboard;
-%     end
+    if(ci==40) % 4
+        keyboard;
+    end
     % retrieve info of current cell
     interiorIntensity = Ps{ci}.intensity;
     P =Ps{ci}.pts;
@@ -77,8 +77,8 @@ for ci=1:1:numContour
     nn(2,:)=P(end,:)-P(end-1,:); %tail
     nn(2,:)=nn(2,:)./hypot(nn(2,1),nn(2,2));
     
-    %pp = P([1,end],:);
-    pp=Ps{ci}.thickness.*nn + P([1,end],:);
+    pp = P([1,end],:);
+    %pp=max([Ps{ci}.thickness-0.5, 0.5]).*nn + P([1,end],:);
     
     pp(:,1)=min(max(pp(:,1),1),xdim);
     pp(:,2)=min(max(pp(:,2),1),ydim);
@@ -101,7 +101,7 @@ for ci=1:1:numContour
     else % expected length [0.95L, 1.05L]
         phi=0;
     end       
-    sf=delta*phi;
+    sf=(delta*phi);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % normalize the image force along the contour
@@ -121,7 +121,7 @@ for ci=1:1:numContour
     FN(FN<-1)=-1;
     
     % make into vectors
-    Fext(:,1)=NV(:,1).*FN ;
+    Fext(:,1)=NV(:,1).*FN;
     Fext(:,2)=NV(:,2).*FN;
 
     %%%%%% tangential direction  %%%%%%%
@@ -139,10 +139,17 @@ for ci=1:1:numContour
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Update contour positions
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    ss = gamma.*P + Fext ;
+    ss = gamma.*P + Fext ; % normal direction
     ds = zeros(2,2);
     %ss(1,:) = ss(1,:) + ff(1).*nn(1,:);
     %ss(end,:) = ss(end,:) + ff(2).*nn(2,:);
+    
+    for hi=1:1:2
+        if(ff(hi)<0 && sf>0 && rp_head(hi)>0 && cv_head(hi)<0)
+            % rp and cv were not negativated. so negative means expansion
+            ff(hi)=0; sf=0;
+        end
+    end
     
     if(ff(1)>ff(2)) % larger means easiler to grow
         if(ff(1)<0)
