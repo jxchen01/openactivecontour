@@ -1,4 +1,4 @@
-function Ps=SnakeRegionUpdate(I,B,Ps,BMap,gamma,kappa,delta)
+function Ps=SnakeRegionUpdate(I,B,Ps,Fedge,BMap,gamma,kappa,delta)
 % This function will calculate one iteration of ribbon Snake movement
 %
 % P=SnakeRegionUpdate(I,B,P,BMap,gamma,kappa)
@@ -17,6 +17,7 @@ function Ps=SnakeRegionUpdate(I,B,Ps,BMap,gamma,kappa,delta)
 %
 % Function is written by Jianxu Chen (University of Notre dame) on Jan 2015
 % modified based on a script from D.Kroon University of Twente 
+ww=5;
 
 [xdim,ydim]=size(I);
 
@@ -35,9 +36,9 @@ dphi=zeros(nPoints,2);
 rp=zeros(nPoints,2);
 Fext=zeros(nPoints,2);
 for ci=1:1:numContour
-    if(ci==40) % 4
-        keyboard;
-    end
+%     if(ci==20) % 4
+%         keyboard;
+%     end
     % retrieve info of current cell
     interiorIntensity = Ps{ci}.intensity;
     P =Ps{ci}.pts;
@@ -77,8 +78,8 @@ for ci=1:1:numContour
     nn(2,:)=P(end,:)-P(end-1,:); %tail
     nn(2,:)=nn(2,:)./hypot(nn(2,1),nn(2,2));
     
-    pp = P([1,end],:);
-    %pp=max([Ps{ci}.thickness-0.5, 0.5]).*nn + P([1,end],:);
+    %pp = nn + P([1,end],:);
+    pp=max([Ps{ci}.thickness-0.5, 1]).*nn + P([1,end],:);
     
     pp(:,1)=min(max(pp(:,1),1),xdim);
     pp(:,2)=min(max(pp(:,2),1),ydim);
@@ -102,6 +103,15 @@ for ci=1:1:numContour
         phi=0;
     end       
     sf=(delta*phi);
+    
+    % edge force based on GVF
+    fe_head=zeros(2,1);
+    tmp=zeros(1,2);
+    tmp(1,:)=Fedge(round(pp(1,1)),round(pp(1,2)),:);
+    fe_head(1)=dot(tmp,nn(1,:));
+    tmp(1,:)=Fedge(round(pp(2,1)),round(pp(2,2)),:);
+    fe_head(2)=dot(tmp,nn(2,:)); 
+    
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % normalize the image force along the contour
@@ -130,7 +140,7 @@ for ci=1:1:numContour
     cv_head=cv_head./cvMax;
     
     % combine repelling force and image force
-    ff=-(kappa.*rp_head+cv_head);
+    ff=-(kappa.*rp_head+cv_head) + ww.*fe_head;
     
     % upper bounded by +/- 1
     ff(ff>1)=1; 
@@ -145,27 +155,46 @@ for ci=1:1:numContour
     %ss(end,:) = ss(end,:) + ff(2).*nn(2,:);
     
     for hi=1:1:2
-        if(ff(hi)<0 && sf>0 && rp_head(hi)>0 && cv_head(hi)<0)
+        if(ff(hi)<0 && sf>0 && rp_head(hi)>0 && cv_head(hi)<0 && fe_head(hi)>0)
             % rp and cv were not negativated. so negative means expansion
             ff(hi)=0; sf=0;
         end
     end
     
-    if(ff(1)>ff(2)) % larger means easiler to grow
-        if(ff(1)<0)
+    if(ff(1)>0 && ff(2)>0)
+        ds(1,:)=(ff(1)+sf).*nn(1,:);
+        ds(2,:)=(ff(2)+sf).*nn(2,:);
+    elseif(ff(1)>0) % ff(2)<=0
+        ds(1,:)=(ff(1)+sf).*nn(1,:);
+        ds(2,:)=ff(2).*nn(2,:);
+    elseif(ff(2)>0) % ff(1)<=0
+        ds(1,:)=ff(1).*nn(1,:);
+        ds(2,:)=(ff(2)+sf).*nn(2,:);
+    else % ff(1)<=0 ff(2)<=0
+        if(ff(1)>ff(2)) % larger means less resistence
             ds(1,:) = (ff(1)+2*sf).*nn(1,:);
+            ds(2,:) = ff(2).*nn(2,:);
         else
-            ds(1,:) = (ff(1)+sf).*nn(1,:);
-        end
-        ds(2,:) = ff(2).*nn(2,:);
-    else
-        if(ff(2)<0)
+            ds(1,:) = ff(1).*nn(1,:);
             ds(2,:) = (ff(2)+2*sf).*nn(2,:);
-        else
-            ds(2,:) = (ff(2)+sf).*nn(2,:);
         end
-        ds(1,:) = ff(1).*nn(1,:);
     end
+    
+%     if(ff(1)>ff(2)) % larger means easiler to grow
+%         if(ff(1)<0)
+%             ds(1,:) = (ff(1)+2*sf).*nn(1,:);
+%         else
+%             ds(1,:) = (ff(1)+sf).*nn(1,:);
+%         end
+%         ds(2,:) = ff(2).*nn(2,:);
+%     else
+%         if(ff(2)<0)
+%             ds(2,:) = (ff(2)+2*sf).*nn(2,:);
+%         else
+%             ds(2,:) = (ff(2)+sf).*nn(2,:);
+%         end
+%         ds(1,:) = ff(1).*nn(1,:);
+%     end
     
     ss([1,end],:) = ss([1,end],:) + ds;
 

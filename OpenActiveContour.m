@@ -84,6 +84,8 @@ for i=1:Options.Iterations
     % Show current contour
     if(Options.Verbose)
         myHandle=drawContours(P,i/Options.Iterations,myHandle,i);
+    else
+        disp(['iteration: ',num2str(i)]);
     end
     
     if(stopCheck(P))
@@ -100,6 +102,7 @@ end
 function flag=stopCheck(P)
     flag=true;
     for i=1:1:numel(P)
+        %disp([abs(P{i}.length - P{i}.targetLength),0.05*P{i}.targetLength]);
         if(abs(P{i}.length - P{i}.targetLength)> 0.05*P{i}.targetLength)
             flag=false;
             break;

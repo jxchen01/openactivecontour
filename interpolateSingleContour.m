@@ -1,9 +1,9 @@
-function K=interpolateSingleContour(P, sz, nPoints)
+function K=interpolateSingleContour(O, sz, nPoints)
 
-% Interpolate points inbetween
-r=min([4,floor((size(P,1)-1)/2)]);
-O(:,1)=interp(P(:,1),10,r);
-O(:,2)=interp(P(:,2),10,r);
+% % Interpolate points inbetween
+% r=min([4,floor((size(P,1)-1)/2)]);
+% O(:,1)=interp(P(:,1),10,r);
+% O(:,2)=interp(P(:,2),10,r);
 
 % Calculate distance between points
 dis=[0;cumsum(sqrt(sum((O(2:end,:)-O(1:end-1,:)).^2,2)))];

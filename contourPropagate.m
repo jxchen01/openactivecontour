@@ -35,7 +35,8 @@ for i=1:1:numel(Ps)
     K(:,2)=min(max(K(:,2),1),sz(2));
     
     t=Ps{i}.thickness;
-    len = Ps{i}.length;
+    %len = Ps{i}.length;
+    len = Ps{i}.targetLength ;
     
     Ps{i}=struct('pts',K,'thickness',t,'length',0,'targetLength',len,...
     'strip1',[],'strip2',[],'region',[],'intensity',[],'normvec',[]);
