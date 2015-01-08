@@ -93,15 +93,19 @@ for ci=1:1:numContour
     cv_head(isnan(cv_head))=0;
     
     % the stretching force
-    if(len<0.85*targetLength)
-        phi=1;
-    elseif(len<0.95*targetLength)
-        phi=0.5;
-    elseif(len>1.1*targetLength)
-        phi=-1;
-    else % expected length [0.95L, 1.05L]
+    if(targetLength<0)
         phi=0;
-    end       
+    else
+        if(len<0.85*targetLength)
+            phi=1;
+        elseif(len<0.95*targetLength)
+            phi=0.5;
+        elseif(len>1.1*targetLength)
+            phi=-1;
+        else % expected length [0.95L, 1.05L]
+            phi=0;
+        end
+    end
     sf=(delta*phi);
     
     % edge force based on GVF
