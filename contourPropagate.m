@@ -36,9 +36,32 @@ for i=1:1:numel(Ps)
     
     t=Ps{i}.thickness;
     %len = Ps{i}.length;
-    len = Ps{i}.targetLength ;
+    %len = Ps{i}.targetLength ;
     
-    Ps{i}=struct('pts',K,'thickness',t,'length',0,'targetLength',len,...
+    if(isCloseToBoundary(K,sz(1),sz(2)))
+        if( Ps{i}.targetLength <0 )
+            len = -1;
+            cl = Ps{i}.copyLength;
+        else
+            len = -1;
+            cl = Ps{i}.copyLength;
+        end
+    else
+        if(Ps{i}.targetLength<0)
+            if(Ps{i}.copyLength==0)
+                len = Ps{i}.length;
+                cl = Ps{i}.length;
+            else
+                len = Ps{i}.copyLength;
+                cl = len;
+            end
+        else
+            len = Ps{i}.targetLength;
+            cl = Ps{i}.copyLength;
+        end
+    end
+    
+    Ps{i}=struct('pts',K,'thickness',t,'length',0,'targetLength',len,'copyLength',cl,...
     'strip1',[],'strip2',[],'region',[],'intensity',[],'normvec',[]);
 end
 
@@ -52,3 +75,4 @@ if(~isempty(skipIdx))
 else
     newPs = Ps;
 end
+

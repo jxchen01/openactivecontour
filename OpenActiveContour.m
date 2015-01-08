@@ -22,14 +22,14 @@ function [P,J]=OpenActiveContour(I,P,Options)
 %  Options.Beta : Thin plate energy (second order), default 0.0
 
 % options (Snake)
-%  Options.Delta : stretching force due to length prior
+%  Options.Delta : stretching force due to length prior, default 1
 %  Options.Kappa : Weight of repelling force, default 0.2
 
 % Function is written by D.Kroon University of Twente (July 2010)
 % Modified by Jianxu Chen (University of Notre Dame) at Jan 2015
 
 % Process inputs
-defaultoptions=struct('Verbose',false,'nPoints',25,'Alpha',0.2,'Beta',0.0,'Delta',2,...
+defaultoptions=struct('Verbose',false,'nPoints',25,'Alpha',0.2,'Beta',0.0,'Delta',1,...
     'Gamma',1,'Kappa',0.2,'Iterations',100);
 
 if(~exist('Options','var')), 

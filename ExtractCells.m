@@ -75,7 +75,11 @@ while(~isempty(ep))
     
     cellList{currentCellNum}=struct('pts',pts,'thickness',thickness,'length',0,...
         'targetLength',pixNum,'strip1',[],'strip2',[],'region',[],'intensity',...
-        [],'normvec',[]);
+        [],'normvec',[],'copyLength',0);
+    
+    if(~isCloseToBoundary(pts,xdim,ydim))
+        cellList{currentCellNum}.copyLength = pixNum;
+    end
 
     ep=find(labelImg==2); 
 end
