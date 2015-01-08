@@ -1,17 +1,22 @@
 function newPs=contourPropagate(Ps,shrinkRate,sz)
 
 nPoints = 20;
-if(shrinkRate>1 || shrinkRate<0)
-    error('incorrect shrink rate');
-elseif(shrinkRate>0.5)
-    shrinkRate = 1-shrinkRate;
+lengthCanSkip = 12;
+
+if(shrinkRate>lengthCanSkip)
+    error('shrink too much');
 end
+% if(shrinkRate>1 || shrinkRate<0)
+%     error('incorrect shrink rate');
+% elseif(shrinkRate>0.5)
+%     shrinkRate = 1-shrinkRate;
+% end
     
 skipIdx=[];
 
 for i=1:1:numel(Ps)
     
-    if(Ps{i}.length<12)
+    if(Ps{i}.length<lengthCanSkip)
         skipIdx=cat(1,skipIdx,i);
         continue;
     end
@@ -27,8 +32,10 @@ for i=1:1:numel(Ps)
 
     % Resample to make uniform points
     K=zeros(nPoints,2);
-    K(:,1) = interp1(dis,O(:,1),linspace(dis(end)*shrinkRate,dis(end)*(1-shrinkRate),nPoints));
-    K(:,2) = interp1(dis,O(:,2),linspace(dis(end)*shrinkRate,dis(end)*(1-shrinkRate),nPoints));
+    K(:,1) = interp1(dis,O(:,1),linspace(shrinkRate,dis(end)-shrinkRate,nPoints));
+    K(:,2) = interp1(dis,O(:,2),linspace(shrinkRate,dis(end)-shrinkRate,nPoints));
+    %K(:,1) = interp1(dis,O(:,1),linspace(dis(end)*shrinkRate,dis(end)*(1-shrinkRate),nPoints));
+    %K(:,2) = interp1(dis,O(:,2),linspace(dis(end)*shrinkRate,dis(end)*(1-shrinkRate),nPoints));
     
     % Clamp contour to boundary
     K(:,1)=min(max(K(:,1),1),sz(1));

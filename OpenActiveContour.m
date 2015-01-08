@@ -13,7 +13,7 @@ function [P,J]=OpenActiveContour(I,P,Options)
 %
 % options (general),
 %  Option.Verbose : If true show important images, default false
-%  Options.nPoints : Number of contour points, default 100
+%  Options.nPoints : Number of contour points, default 20
 %  Options.Gamma : Time step, default 1
 %  Options.Iterations : Number of iterations, default 100
 %
@@ -29,7 +29,7 @@ function [P,J]=OpenActiveContour(I,P,Options)
 % Modified by Jianxu Chen (University of Notre Dame) at Jan 2015
 
 % Process inputs
-defaultoptions=struct('Verbose',false,'nPoints',25,'Alpha',0.2,'Beta',0.0,'Delta',1,...
+defaultoptions=struct('Verbose',false,'nPoints',20,'Alpha',0.2,'Beta',0.0,'Delta',1,...
     'Gamma',1,'Kappa',0.2,'Iterations',100);
 
 if(~exist('Options','var')), 
